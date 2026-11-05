@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" font-family="system-ui, sans-serif" font-size="12">
+  <style>
+    .board { fill: #eef1f4; stroke: #556; stroke-width: 1.5; }
+    .lbl { fill: #223; } .mut { fill: #667; }
+    .wire { fill: none; stroke: #b5460f; stroke-width: 2; }
+    .wire5 { fill: none; stroke: #b03a3a; stroke-width: 2; }
+    .ant { fill: none; stroke: #2f7d32; stroke-width: 2; }
+    .rf { fill: none; stroke: #667; stroke-width: 1.5; stroke-dasharray: 4 4; }
+    .pad { fill: #cfd6dd; stroke: #889; stroke-width: 1; }
+    @media (prefers-color-scheme: dark) {
+      .board { fill: #2a2f36; stroke: #9aa; } .lbl { fill: #e8e8e4; } .mut { fill: #9a9a92; }
+      .pad { fill: #3a414a; stroke: #778; }
+    }
+  </style>
+  <rect x="15" y="70" width="80" height="55" rx="6" class="board"/>
+  <text x="55" y="100" text-anchor="middle" class="lbl">Laptop</text>
+  <path d="M95 97 H 140" class="wire"/><text x="117" y="90" text-anchor="middle" class="mut" font-size="9">USB</text>
+  <rect x="140" y="65" width="120" height="65" rx="6" class="board"/>
+  <text x="200" y="90" text-anchor="middle" class="lbl" font-weight="600">XIAO C3</text>
+  <text x="200" y="106" text-anchor="middle" class="mut" font-size="10">BRIDGE</text>
+  <circle cx="200" cy="65" r="4" class="pad"/><path d="M200 65 V 44 h 26" class="ant"/><text x="230" y="41" class="mut" font-size="9">antenna</text>
+  <path d="M260 97 H 380" class="rf"/><text x="320" y="90" text-anchor="middle" class="mut" font-size="9">ESP-NOW</text>
+  <rect x="380" y="65" width="120" height="65" rx="6" class="board"/>
+  <text x="440" y="90" text-anchor="middle" class="lbl" font-weight="600">XIAO C3</text>
+  <text x="440" y="106" text-anchor="middle" class="mut" font-size="10">SENSOR</text>
+  <circle cx="440" cy="65" r="4" class="pad"/><path d="M440 65 V 44 h 26" class="ant"/><text x="470" y="41" class="mut" font-size="9">antenna</text>
+  <rect x="380" y="175" width="120" height="50" rx="6" class="board"/>
+  <text x="440" y="196" text-anchor="middle" class="lbl" font-size="11" font-weight="600">Level shifter</text>
+  <text x="440" y="212" text-anchor="middle" class="mut" font-size="9">3.3 V to 5 V</text>
+  <rect x="540" y="175" width="90" height="50" rx="6" class="board"/>
+  <text x="585" y="196" text-anchor="middle" class="lbl" font-size="11" font-weight="600">HC-SR04</text>
+  <text x="585" y="212" text-anchor="middle" class="mut" font-size="9">5 V sensor</text>
+  <path d="M420 130 V 175" class="wire"/><text x="372" y="155" text-anchor="end" class="mut" font-size="9">TRIG D2 (3.3V)</text>
+  <path d="M460 130 V 175" class="wire"/><text x="508" y="155" class="mut" font-size="9">ECHO D3</text>
+  <path d="M500 190 H 540" class="wire5"/><text x="520" y="185" text-anchor="middle" class="mut" font-size="8">5V side</text>
+  <path d="M500 210 H 540" class="wire5"/>
+  <text x="300" y="260" class="mut" font-size="10">HC-SR04 is 5 V. Power from 5 V (VUSB). ECHO (5 V out) goes through the shifter down to 3.3 V before D3.</text>
+  <text x="300" y="276" class="mut" font-size="10">TRIG is fine driven from the C3's 3.3 V. Share GND across board, shifter and sensor.</text>
+</svg>

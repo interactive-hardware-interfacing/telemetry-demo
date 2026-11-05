@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireless Telemetry</title>
+<meta name="description" content="Send an ultrasonic distance reading between two XIAO ESP32-C3 boards and watch the number and the raw bytes that carried it, live over Web Serial.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Wireless Telemetry</h1>
+  <p class="tag">Wave your hand at the sensor and watch the distance fly across the room — and see the exact bytes that carried it.</p>
+  <nav>
+    <a href="#firmware">Firmware</a>
+    <a href="#about">About</a>
+    <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo">Source</a>
+    <a href="https://interactive-hardware-interfacing.github.io/">All tools</a>
+  </nav>
+</header>
+
+<div class="bar">
+  <button id="connect" class="primary">Connect bridge</button>
+  <button id="sim">Try without hardware</button>
+  <button id="disconnect">Disconnect</button>
+  <span id="link" class="bad">LINK LOST</span>
+  <span id="status">Not connected</span>
+</div>
+
+<div class="note" id="nowebserial" hidden>
+  This browser can’t open USB serial ports. Use <strong>Chrome</strong> or <strong>Edge</strong> on a laptop or desktop. <strong>Try without hardware</strong> works anywhere.
+</div>
+
+<div class="grid2">
+  <div class="panel">
+    <h2>Distance over time</h2>
+    <canvas id="chart" width="620" height="170"></canvas>
+    <div class="distwrap"><div id="distbar"></div></div>
+  </div>
+  <div class="panel">
+    <h2>The number &amp; its bytes</h2>
+    <div class="bignum" id="distnum">—</div>
+    <div class="k" id="distcm" style="color:var(--muted)">waiting…</div>
+    <div style="margin-top:10px" class="k">raw echo: <span id="echo">—</span> µs</div>
+    <div id="payhex">—</div>
+    <p class="tag" style="margin-top:8px">The green bytes are the distance field — the number on the air.</p>
+    <div id="dropout" hidden>No echo — sensor blocked or out of range. The chart holds rather than drawing a false zero.</div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:16px">
+  <h2>Serial log</h2>
+  <div id="log"></div>
+  <div class="logbar">
+    <input id="logcmd" placeholder="Line sent to the bridge (ignored in simulator)">
+    <button id="logsend">Send</button>
+  </div>
+</div>
+
+<!-- ================= ABOUT ================= -->
+<section class="doc" id="about">
+  <h2>About this demo</h2>
+
+  <h3>What it shows</h3>
+  <p>
+    A sensor on one board, a screen across the room. The sensor measures distance with sound (like a bat
+    or a parking sensor), packs the reading into a few bytes, and radios it to a second board plugged into
+    the laptop. You see the <strong>number</strong> and, right next to it, the <strong>exact bytes</strong>
+    that carried it — so “data” and “the thing that moved through the air” are the same object on screen.
+  </p>
+  <p><strong>Try this during the tour:</strong> wave a hand in front of the sensor and watch the line and the bar
+    follow it. Cover the sensor completely and the line holds and flags “no echo” instead of lying with a zero.</p>
+
+  <h3>Hardware</h3>
+  <table>
+    <tr><th>Role</th><th>Board</th><th>Extras</th><th>Power</th></tr>
+    <tr><td>Bridge (receiver)</td><td>XIAO ESP32-C3</td><td>u.FL antenna</td><td>Laptop USB-C</td></tr>
+    <tr><td>Sensor (sender)</td><td>XIAO ESP32-C3</td><td>HC-SR04, level shifter, u.FL antenna</td><td>USB bank (5 V)</td></tr>
+  </table>
+  <p class="tag">Swappable sensor: the firmware’s <code>read_sensor()</code> can return a photoresistor, pot, or TMP36
+    reading instead — the payload and page don’t change.</p>
+
+  <h3>Wiring</h3>
+  <div class="wiringfig">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" font-family="system-ui, sans-serif" font-size="12">
+      <style>
+        .board { fill: var(--panel); stroke: var(--muted); stroke-width: 1.5; }
+        .lbl { fill: var(--ink); } .mut { fill: var(--muted); }
+        .wire { fill: none; stroke: var(--accent); stroke-width: 2; }
+        .wire5 { fill: none; stroke: #b03a3a; stroke-width: 2; }
+        .ant { fill: none; stroke: var(--ok); stroke-width: 2; }
+        .rf { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 4; }
+        .pad { fill: var(--grid); stroke: var(--muted); stroke-width: 1; }
+      </style>
+      <!-- laptop + bridge -->
+      <rect x="15" y="70" width="80" height="55" rx="6" class="board"/>
+      <text x="55" y="100" text-anchor="middle" class="lbl">Laptop</text>
+      <path d="M95 97 H 140" class="wire"/><text x="117" y="90" text-anchor="middle" class="mut" font-size="9">USB</text>
+      <rect x="140" y="65" width="120" height="65" rx="6" class="board"/>
+      <text x="200" y="90" text-anchor="middle" class="lbl" font-weight="600">XIAO C3</text>
+      <text x="200" y="106" text-anchor="middle" class="mut" font-size="10">BRIDGE</text>
+      <circle cx="200" cy="65" r="4" class="pad"/><path d="M200 65 V 44 h 26" class="ant"/><text x="230" y="41" class="mut" font-size="9">antenna</text>
+      <!-- rf link -->
+      <path d="M260 97 H 380" class="rf"/><text x="320" y="90" text-anchor="middle" class="mut" font-size="9">ESP-NOW</text>
+      <!-- sensor board -->
+      <rect x="380" y="65" width="120" height="65" rx="6" class="board"/>
+      <text x="440" y="90" text-anchor="middle" class="lbl" font-weight="600">XIAO C3</text>
+      <text x="440" y="106" text-anchor="middle" class="mut" font-size="10">SENSOR</text>
+      <circle cx="440" cy="65" r="4" class="pad"/><path d="M440 65 V 44 h 26" class="ant"/><text x="470" y="41" class="mut" font-size="9">antenna</text>
+      <!-- level shifter -->
+      <rect x="380" y="175" width="120" height="50" rx="6" class="board"/>
+      <text x="440" y="196" text-anchor="middle" class="lbl" font-size="11" font-weight="600">Level shifter</text>
+      <text x="440" y="212" text-anchor="middle" class="mut" font-size="9">3.3 V ⇄ 5 V</text>
+      <!-- HC-SR04 -->
+      <rect x="540" y="175" width="90" height="50" rx="6" class="board"/>
+      <text x="585" y="196" text-anchor="middle" class="lbl" font-size="11" font-weight="600">HC-SR04</text>
+      <text x="585" y="212" text-anchor="middle" class="mut" font-size="9">5 V sensor</text>
+      <!-- connections -->
+      <path d="M420 130 V 175" class="wire"/><text x="372" y="155" text-anchor="end" class="mut" font-size="9">TRIG D2 (3.3V)</text>
+      <path d="M460 130 V 175" class="wire"/><text x="508" y="155" class="mut" font-size="9">ECHO D3</text>
+      <path d="M500 190 H 540" class="wire5"/><text x="520" y="185" text-anchor="middle" class="mut" font-size="8">5V side</text>
+      <path d="M500 210 H 540" class="wire5"/>
+      <text x="300" y="260" class="mut" font-size="10">HC-SR04 is 5 V. Power it from 5 V (VUSB). ECHO (a 5 V output) goes through the shifter down to 3.3 V before D3.</text>
+      <text x="300" y="276" class="mut" font-size="10">TRIG is fine driven straight from the C3’s 3.3 V. Share GND across board, shifter and sensor.</text>
+    </svg>
+  </div>
+  <table>
+    <tr><th>Signal</th><th>From</th><th>To</th><th>Note</th></tr>
+    <tr><td>Bridge USB</td><td>Bridge C3</td><td>Laptop</td><td>Only required connection on the receive side</td></tr>
+    <tr><td>Antenna (both)</td><td>u.FL</td><td>Whip</td><td>Clip on firmly</td></tr>
+    <tr><td>TRIG</td><td>Sensor C3 D2</td><td>HC-SR04 TRIG</td><td>3.3 V drive is fine, straight through</td></tr>
+    <tr><td>ECHO</td><td>HC-SR04 ECHO (5 V)</td><td>Sensor C3 D3</td><td><strong>Through the level shifter</strong> — 5 V would stress the C3</td></tr>
+    <tr><td>Sensor power</td><td>VUSB (5 V)</td><td>HC-SR04 VCC</td><td>HC-SR04 needs 5 V; GND shared everywhere</td></tr>
+  </table>
+
+  <h3>How it works</h3>
+  <p>
+    The sensor board reads the HC-SR04, puts both the raw echo time (µs) and the computed distance (mm) into a
+    16-byte packet, and broadcasts it over ESP-NOW → the bridge checks the CRC and prints one JSON line per
+    packet → this page plots the distance and shows the raw bytes with the distance field highlighted.
+    A distance of <code>0xFFFF</code> means “no echo,” which the page shows as a held line, not a zero.
+    Same bridge serial format as the rest of the family (see
+    <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo/blob/main/PROTOCOL.md">PROTOCOL.md</a>).
+  </p>
+  <p><strong>Known quirks:</strong></p>
+  <ul>
+    <li>The raw µs and the mm are the same measurement — the sensor gives one, the firmware computes the other from it (×58 µs/cm). That’s the point of showing both.</li>
+    <li>HC-SR04 is flaky on soft or angled surfaces; a flat hand or a book reads best.</li>
+    <li>ECHO must go through the level shifter. Skipping it feeds 5 V into a 3.3 V pin.</li>
+    <li>If the antenna is loose you’ll see LINK LOST. Check the u.FL first.</li>
+    <li>Both boards pin channel 6; keep them matched. Flashing stuck? BOOT + RESET.</li>
+  </ul>
+</section>
+
+<!-- ================= FIRMWARE ================= -->
+<section class="doc" id="firmware">
+  <h2>Put the firmware on the boards</h2>
+  <p>Both run <strong>CircuitPython</strong>; you copy a <code>code.py</code> onto each.</p>
+  <ol class="steps">
+    <li><strong>Install CircuitPython</strong> on each XIAO ESP32-C3 if needed (<a href="https://circuitpython.org/board/seeed_xiao_esp32c3/">board page</a>).</li>
+    <li><strong>Add the sensor library.</strong> Put <code>adafruit_hcsr04.mpy</code> (from the CircuitPython library bundle) in the sensor board’s <code>lib/</code>.</li>
+    <li><strong>Sensor board:</strong> copy <code>firmware/sensor/code.py</code>, wire the HC-SR04 through the level shifter (see Wiring), power from a USB bank.</li>
+    <li><strong>Bridge board:</strong> copy <code>firmware/bridge/code.py</code>. Plug this one into the laptop.</li>
+    <li><strong>Connect.</strong> Click <strong>Connect bridge</strong>, pick the <em>USB JTAG/serial</em> port.</li>
+  </ol>
+  <p class="tag">Swapping sensors? Edit <code>read_sensor()</code> in the sensor <code>code.py</code> to return <code>(raw, value_mm)</code> — the payload and page stay the same.</p>
+</section>
+
+<footer>
+  Wireless Telemetry v0.1.0 · Last updated 2026-11-04 · Part of
+  <a href="https://interactive-hardware-interfacing.github.io/">Interactive Hardware Interfacing</a>.
+  Works in Chrome and Edge via Web Serial.
+  <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo/blob/main/LICENSE">GPL-2.0</a>.
+  Maintained by <a href="https://github.com/LC-Linkous">LC Linkous</a>.
+</footer>
+
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
