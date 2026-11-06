@@ -1,15 +1,14 @@
 'use strict';
 
 /*
- * bridge.js — Web Serial reader for the demo-family bridge format.
+ * bridge.js — Web Serial reader for the bridge's line-JSON format.
  *
  * The bridge node prints one compact JSON object per line over USB serial at
  * 115200 baud. This reader opens the port, splits on newlines, parses each
- * line, and calls onLine(obj). It tolerates partial lines and junk. The whole
- * demo family (rssi/telemetry/morse/address) reuses this unchanged; only the
- * payload decoding on the page differs.
+ * line, and calls onLine(obj). It tolerates partial lines and junk. Payload
+ * decoding happens on the page, not here.
  *
- * Shared line types: {"t":"hello",...} {"t":"pkt",...} {"t":"idle",...}
+ * Line types (see PROTOCOL.md): {"t":"hello",...} {"t":"pkt",...} {"t":"idle",...}
  */
 
 export class Bridge {

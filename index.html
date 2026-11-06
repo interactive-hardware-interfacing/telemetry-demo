@@ -5,21 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Wireless Telemetry</title>
 <meta name="description" content="Send an ultrasonic distance reading between two XIAO ESP32-C3 boards and watch the number and the raw bytes that carried it, live over Web Serial.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="wrap">
 
 <header>
+  <p class="eyebrow"><a href="https://interactive-hardware-interfacing.github.io/#wireless">Wireless communication</a> · demo</p>
   <h1>Wireless Telemetry</h1>
   <p class="tag">Wave your hand at the sensor and watch the distance fly across the room — and see the exact bytes that carried it.</p>
-  <nav>
-    <a href="#firmware">Firmware</a>
-    <a href="#about">About</a>
+  <nav aria-label="Page">
+    <a href="#" data-view="" aria-current="page">Instrument</a>
+    <a href="#hardware" data-view="hardware" aria-current="false">Hardware</a>
+    <a href="#firmware" data-view="firmware" aria-current="false">Firmware</a>
+    <a href="#about" data-view="about" aria-current="false">About</a>
+    <span class="navsep" aria-hidden="true"></span>
     <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo">Source</a>
     <a href="https://interactive-hardware-interfacing.github.io/">All tools</a>
   </nav>
 </header>
+
+<!-- ================= INSTRUMENT ================= -->
+<div id="instrument">
 
 <div class="bar">
   <button id="connect" class="primary">Connect bridge</button>
@@ -42,54 +52,49 @@
   <div class="panel">
     <h2>The number &amp; its bytes</h2>
     <div class="bignum" id="distnum">—</div>
-    <div class="k" id="distcm" style="color:var(--muted)">waiting…</div>
+    <div class="k" id="distcm">waiting…</div>
     <div style="margin-top:10px" class="k">raw echo: <span id="echo">—</span> µs</div>
     <div id="payhex">—</div>
-    <p class="tag" style="margin-top:8px">The green bytes are the distance field — the number on the air.</p>
+    <p class="tag" style="margin-top:8px">The highlighted bytes are the distance field — the number on the air.</p>
     <div id="dropout" hidden>No echo — sensor blocked or out of range. The chart holds rather than drawing a false zero.</div>
   </div>
 </div>
 
-<div class="panel" style="margin-top:16px">
-  <h2>Serial log</h2>
+<div class="termpanel">
+  <div class="termbar"><span class="dots"><i></i><i></i><i></i></span><span>serial log · 115200 8N1</span></div>
   <div id="log"></div>
   <div class="logbar">
     <input id="logcmd" placeholder="Line sent to the bridge (ignored in simulator)">
-    <button id="logsend">Send</button>
+    <button id="logsend" class="small">Send</button>
   </div>
 </div>
 
-<!-- ================= ABOUT ================= -->
-<section class="doc" id="about">
-  <h2>About this demo</h2>
+</div><!-- /instrument -->
 
-  <h3>What it shows</h3>
-  <p>
-    A sensor on one board, a screen across the room. The sensor measures distance with sound (like a bat
-    or a parking sensor), packs the reading into a few bytes, and radios it to a second board plugged into
-    the laptop. You see the <strong>number</strong> and, right next to it, the <strong>exact bytes</strong>
-    that carried it — so “data” and “the thing that moved through the air” are the same object on screen.
-  </p>
-  <p><strong>Try this during the tour:</strong> wave a hand in front of the sensor and watch the line and the bar
-    follow it. Cover the sensor completely and the line holds and flags “no echo” instead of lying with a zero.</p>
+<!-- ================= HARDWARE ================= -->
+<section class="view" id="hardware" aria-label="Hardware" hidden>
+  <div class="viewhead">
+    <h2>Hardware</h2>
+    <p class="lede">Two boards, one sensor, and the one part that keeps 5 V out of a 3.3 V pin.</p>
+    <button type="button" class="small" data-back>Back to instrument</button>
+  </div>
 
-  <h3>Hardware</h3>
+  <h3>Two boards</h3>
   <table>
     <tr><th>Role</th><th>Board</th><th>Extras</th><th>Power</th></tr>
-    <tr><td>Bridge (receiver)</td><td>XIAO ESP32-C3</td><td>u.FL antenna</td><td>Laptop USB-C</td></tr>
-    <tr><td>Sensor (sender)</td><td>XIAO ESP32-C3</td><td>HC-SR04, level shifter, u.FL antenna</td><td>USB bank (5 V)</td></tr>
+    <tr><td>Bridge (receiver)</td><td>XIAO ESP32-C3 running <code>bridge</code></td><td>u.FL antenna. Nothing wired</td><td>Laptop USB-C</td></tr>
+    <tr><td>Sensor (sender)</td><td>XIAO ESP32-C3 running <code>sensor</code></td><td>HC-SR04, level shifter, u.FL antenna</td><td>USB bank (5 V)</td></tr>
   </table>
-  <p class="tag">Swappable sensor: the firmware’s <code>read_sensor()</code> can return a photoresistor, pot, or TMP36
-    reading instead — the payload and page don’t change.</p>
+  <p class="tag">Only the sensor board needs a breadboard. The bridge is antenna + USB cable.</p>
 
   <h3>Wiring</h3>
   <div class="wiringfig">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" font-family="system-ui, sans-serif" font-size="12">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" font-family="system-ui, sans-serif" font-size="12" role="img" aria-label="Laptop to a XIAO C3 bridge over USB. The bridge receives over ESP-NOW from a XIAO C3 sensor board. The sensor board drives an HC-SR04 TRIG from D2 and reads its ECHO on D3 through a level shifter; the HC-SR04 is powered from 5 V.">
       <style>
         .board { fill: var(--panel); stroke: var(--muted); stroke-width: 1.5; }
         .lbl { fill: var(--ink); } .mut { fill: var(--muted); }
         .wire { fill: none; stroke: var(--accent); stroke-width: 2; }
-        .wire5 { fill: none; stroke: #b03a3a; stroke-width: 2; }
+        .wire5 { fill: none; stroke: var(--err); stroke-width: 2; }
         .ant { fill: none; stroke: var(--ok); stroke-width: 2; }
         .rf { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 4; }
         .pad { fill: var(--grid); stroke: var(--muted); stroke-width: 1; }
@@ -132,8 +137,107 @@
     <tr><td>Antenna (both)</td><td>u.FL</td><td>Whip</td><td>Clip on firmly</td></tr>
     <tr><td>TRIG</td><td>Sensor C3 D2</td><td>HC-SR04 TRIG</td><td>3.3 V drive is fine, straight through</td></tr>
     <tr><td>ECHO</td><td>HC-SR04 ECHO (5 V)</td><td>Sensor C3 D3</td><td><strong>Through the level shifter</strong> — 5 V would stress the C3</td></tr>
-    <tr><td>Sensor power</td><td>VUSB (5 V)</td><td>HC-SR04 VCC</td><td>HC-SR04 needs 5 V; GND shared everywhere</td></tr>
+    <tr><td>Sensor power</td><td>VUSB (5 V)</td><td>HC-SR04 VCC</td><td>HC-SR04 needs 5 V</td></tr>
+    <tr><td>Shifter HV / LV</td><td>5 V / 3.3 V</td><td>shifter power pins</td><td>HV is the sensor side, LV the C3 side</td></tr>
+    <tr><td>GND</td><td>shared</td><td>board + shifter + sensor</td><td>Common ground everywhere</td></tr>
   </table>
+
+  <h3>Parts</h3>
+  <ul>
+    <li>2× Seeed XIAO ESP32-C3 with the u.FL antennas that ship with them.</li>
+    <li>HC-SR04 ultrasonic distance sensor (the common 4-pin 5 V module).</li>
+    <li>A bidirectional logic level shifter (any 4- or 8-channel 3.3 V ⇄ 5 V breakout). Only one channel is used, for ECHO.</li>
+    <li>Breadboard and jumper wires for the sensor board; a USB bank to power it.</li>
+    <li>USB-C data cables (not charge-only).</li>
+  </ul>
+  <p class="tag">Swappable sensor: the firmware’s <code>read_sensor()</code> can return a photoresistor, pot, or TMP36
+    reading instead — the payload and page don’t change.</p>
+
+  <h3>Things that bite</h3>
+  <ul>
+    <li><strong>ECHO must go through the level shifter.</strong> Skipping it feeds 5 V into a 3.3 V pin.</li>
+    <li>HC-SR04 is flaky on soft or angled surfaces; a flat hand or a book reads best.</li>
+    <li>If the antenna is loose you’ll see LINK LOST. Check the u.FL first.</li>
+    <li>Both boards pin channel 6; keep them matched.</li>
+    <li>If you add wiring of your own, keep anything tied to ground at power-up off D0, D8 (SCK) and D9 (MISO): on the ESP32-C3 they are boot-strapping pins.</li>
+    <li>A board that won’t take firmware: hold <strong>BOOT</strong> (B), tap <strong>RESET</strong> (R), release BOOT, then try again.</li>
+  </ul>
+  <p class="tag">Pinout detail is in <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo/blob/main/wiring/wiring.md">wiring/wiring.md</a>.</p>
+</section>
+
+<!-- ================= FIRMWARE ================= -->
+<section class="view" id="firmware" aria-label="Firmware" hidden>
+  <div class="viewhead">
+    <h2>Put the firmware on the boards</h2>
+    <p class="lede">Two roles, <code>bridge</code> and <code>sensor</code>, each a single <code>code.py</code> written straight from this page. Chrome or Edge.</p>
+    <button type="button" class="small" data-back>Back to instrument</button>
+  </div>
+
+  <div class="steps">
+    <div class="step"><b>1. Plug in</b><p>Connect one XIAO ESP32-C3 over USB. If the instrument is connected to a board, this page disconnects it first.</p></div>
+    <div class="step"><b>2. Pick its job</b><p><b>Install bridge</b> for the board that stays at the laptop and receives. <b>Install sensor</b> for the board with the HC-SR04. Pick the port named <em>USB JTAG/serial debug unit</em>.</p></div>
+    <div class="step"><b>3. Wait for the boot line</b><p>The page writes <code>code.py</code> over CircuitPython’s REPL, checks its size and CRC on the board, reboots it, and waits for the firmware’s first line. Then do the other board.</p></div>
+    <div class="step"><b>4. Connect</b><p>Back on the instrument, click <b>Connect bridge</b> and pick the bridge’s port. Or skip all of this: <b>Try without hardware</b> runs the page against a simulator.</p></div>
+  </div>
+
+  <div class="note">
+    <strong>The sensor board also needs one library.</strong> The sensor firmware imports <code>adafruit_hcsr04</code>, which this page can’t install. Once, per sensor board: download the
+    <a href="https://circuitpython.org/libraries" target="_blank" rel="noopener">CircuitPython library bundle</a> for your CircuitPython version, and put
+    <code>adafruit_hcsr04.mpy</code> into the board’s <code>lib/</code> folder with Thonny (File → Open → CircuitPython device shows the filesystem; drag the file into <code>lib/</code>) or the
+    <a href="https://code.circuitpython.org/" target="_blank" rel="noopener">CircuitPython web editor</a>. The bridge needs nothing extra.
+  </div>
+
+  <div class="panel fwpanel">
+    <div class="fwrow">
+      <button id="fwInstallBridge" class="primary">Install bridge</button>
+      <button id="fwInstallSensor" class="primary">Install sensor</button>
+      <span id="fwStatus" class="fwstatus">Ready. Plug a board in and pick its role.</span>
+    </div>
+    <progress id="fwBar" max="1" value="0" hidden></progress>
+    <div class="note" id="fwNoRepl" hidden>
+      <strong>No CircuitPython on that board.</strong> A XIAO ESP32-C3 fresh from the bag runs Seeed’s factory sketch, not CircuitPython. Install CircuitPython once with the button below, then come back to <b>Install bridge</b> or <b>Install sensor</b>.
+    </div>
+    <div class="cpflash">
+      <h3>Bare board? Install CircuitPython first</h3>
+      <ol>
+        <li>Download the <b>.bin</b> (not the .uf2) for the XIAO ESP32-C3 from <a href="https://circuitpython.org/board/seeed_xiao_esp32c3/" target="_blank" rel="noopener">circuitpython.org</a>. The download site doesn’t let a page fetch it directly, so it’s a save-then-pick.</li>
+        <li><button id="cpLoad" class="small">Choose .bin…</button> <input type="file" id="cpFile" accept=".bin" hidden> <span id="cpName" class="tag">nothing chosen</span></li>
+        <li><button id="cpFlash" class="small" disabled>Flash CircuitPython</button> — erases the board and writes the image (about a minute). If the chip doesn’t answer, unplug, hold <b>BOOT</b> while plugging back in, and retry.</li>
+      </ol>
+      <p class="tag">This step uses <a href="https://github.com/espressif/esptool-js">esptool-js</a>, kept in <code>flasher/</code> under its own licence (Apache-2.0).</p>
+    </div>
+    <h3>Log</h3>
+    <div id="fwLog" class="fwlog" aria-live="polite"></div>
+  </div>
+
+  <details>
+    <summary>Doing it by hand instead</summary>
+    <ul>
+      <li><strong>Thonny:</strong> Tools → Options → Interpreter → <em>CircuitPython (generic)</em>, pick the port, open <code>firmware/bridge/code.py</code> or <code>firmware/sensor/code.py</code>, then File → Save as… → <em>CircuitPython device</em>, name it <code>code.py</code>. For the sensor board, also copy <code>adafruit_hcsr04.mpy</code> into <code>lib/</code>.</li>
+      <li><strong>CircuitPython from a terminal:</strong> <code>pip install esptool</code>, then <code>esptool.py --chip esp32c3 --port COMn erase_flash</code> and <code>esptool.py --chip esp32c3 --port COMn write_flash 0x0 adafruit-circuitpython-seeed_xiao_esp32c3-en_US-&lt;version&gt;.bin</code>.</li>
+      <li>The REPL exchange the page uses is written out in <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo/blob/main/PROTOCOL.md">PROTOCOL.md</a>.</li>
+    </ul>
+  </details>
+  <p class="tag">Swapping sensors? Edit <code>read_sensor()</code> in the sensor <code>code.py</code> to return <code>(raw, value_mm)</code> — the payload and page stay the same.</p>
+</section>
+
+<!-- ================= ABOUT ================= -->
+<section class="view" id="about" aria-label="About this demo" hidden>
+  <div class="viewhead">
+    <h2>About this demo</h2>
+    <p class="lede">What it shows, how to run it in front of a room, and how the bytes become a number.</p>
+    <button type="button" class="small" data-back>Back to instrument</button>
+  </div>
+
+  <h3>What it shows</h3>
+  <p>
+    A sensor on one board, a screen across the room. The sensor measures distance with sound (like a bat
+    or a parking sensor), packs the reading into a few bytes, and radios it to a second board plugged into
+    the laptop. You see the <strong>number</strong> and, right next to it, the <strong>exact bytes</strong>
+    that carried it — so “data” and “the thing that moved through the air” are the same object on screen.
+  </p>
+  <p><strong>Try this during the tour:</strong> wave a hand in front of the sensor and watch the line and the bar
+    follow it. Cover the sensor completely and the line holds and flags “no echo” instead of lying with a zero.</p>
 
   <h3>How it works</h3>
   <p>
@@ -141,38 +245,35 @@
     16-byte packet, and broadcasts it over ESP-NOW → the bridge checks the CRC and prints one JSON line per
     packet → this page plots the distance and shows the raw bytes with the distance field highlighted.
     A distance of <code>0xFFFF</code> means “no echo,” which the page shows as a held line, not a zero.
-    Same bridge serial format as the rest of the family (see
-    <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo/blob/main/PROTOCOL.md">PROTOCOL.md</a>).
+    The line format and payload layout are in
+    <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo/blob/main/PROTOCOL.md">PROTOCOL.md</a>.
   </p>
   <p><strong>Known quirks:</strong></p>
   <ul>
     <li>The raw µs and the mm are the same measurement — the sensor gives one, the firmware computes the other from it (×58 µs/cm). That’s the point of showing both.</li>
     <li>HC-SR04 is flaky on soft or angled surfaces; a flat hand or a book reads best.</li>
-    <li>ECHO must go through the level shifter. Skipping it feeds 5 V into a 3.3 V pin.</li>
     <li>If the antenna is loose you’ll see LINK LOST. Check the u.FL first.</li>
-    <li>Both boards pin channel 6; keep them matched. Flashing stuck? BOOT + RESET.</li>
   </ul>
-</section>
 
-<!-- ================= FIRMWARE ================= -->
-<section class="doc" id="firmware">
-  <h2>Put the firmware on the boards</h2>
-  <p>Both run <strong>CircuitPython</strong>; you copy a <code>code.py</code> onto each.</p>
-  <ol class="steps">
-    <li><strong>Install CircuitPython</strong> on each XIAO ESP32-C3 if needed (<a href="https://circuitpython.org/board/seeed_xiao_esp32c3/">board page</a>).</li>
-    <li><strong>Add the sensor library.</strong> Put <code>adafruit_hcsr04.mpy</code> (from the CircuitPython library bundle) in the sensor board’s <code>lib/</code>.</li>
-    <li><strong>Sensor board:</strong> copy <code>firmware/sensor/code.py</code>, wire the HC-SR04 through the level shifter (see Wiring), power from a USB bank.</li>
-    <li><strong>Bridge board:</strong> copy <code>firmware/bridge/code.py</code>. Plug this one into the laptop.</li>
-    <li><strong>Connect.</strong> Click <strong>Connect bridge</strong>, pick the <em>USB JTAG/serial</em> port.</li>
-  </ol>
-  <p class="tag">Swapping sensors? Edit <code>read_sensor()</code> in the sensor <code>code.py</code> to return <code>(raw, value_mm)</code> — the payload and page stay the same.</p>
+  <h3>The pieces</h3>
+  <table>
+    <tr><th>Part</th><th>What it is</th></tr>
+    <tr><td><code>index.html</code>, <code>css/</code>, <code>js/</code></td><td>This page. No build step, no framework; view source and you have it.</td></tr>
+    <tr><td><code>js/bridge.js</code>, <code>js/sim.js</code></td><td>Web Serial reader for the bridge’s line-JSON, and a simulator that waves a hand.</td></tr>
+    <tr><td><code>js/device/</code>, <code>flasher/</code></td><td>The Firmware tab: CircuitPython raw REPL, and esptool-js for bare boards.</td></tr>
+    <tr><td><code>firmware/bridge/</code>, <code>firmware/sensor/</code></td><td>One CircuitPython file per role.</td></tr>
+    <tr><td><code>PROTOCOL.md</code>, <code>wiring/</code></td><td>The serial contract and the hookup.</td></tr>
+  </table>
+  <p class="tag">Part of <a href="https://interactive-hardware-interfacing.github.io/">Interactive Hardware Interfacing</a>.
+    GPL-2.0, except <code>flasher/</code> (Apache-2.0) — see <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo/blob/main/LICENSES.md">LICENSES.md</a>.</p>
 </section>
 
 <footer>
-  Wireless Telemetry v0.1.0 · Last updated 2026-11-04 · Part of
+  Wireless Telemetry v0.2.0 · Last updated 2026-11-06 · Part of
   <a href="https://interactive-hardware-interfacing.github.io/">Interactive Hardware Interfacing</a>.
   Works in Chrome and Edge via Web Serial.
-  <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo/blob/main/LICENSE">GPL-2.0</a>.
+  <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo/blob/main/LICENSE">GPL-2.0</a>, except
+  <a href="https://github.com/interactive-hardware-interfacing/telemetry-demo/blob/main/LICENSES.md">flasher/</a>.
   Maintained by <a href="https://github.com/LC-Linkous">LC Linkous</a>.
 </footer>
 

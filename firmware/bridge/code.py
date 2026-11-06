@@ -1,6 +1,6 @@
 # code.py — BRIDGE node for telemetry-demo
 #
-# Shared bridge format (see PROTOCOL.md). Decodes the 16-byte telemetry
+# Line-JSON bridge (see PROTOCOL.md). Decodes the 16-byte telemetry
 # payload: raw echo microseconds and computed distance. A distance of 0xFFFF
 # means "no echo" (out of range / sensor blocked), which the page shows as a
 # dropout flatline rather than a bogus zero.

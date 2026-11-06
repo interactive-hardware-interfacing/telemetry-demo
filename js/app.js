@@ -14,6 +14,8 @@
 
 import { Bridge, FIELD_MAP } from './bridge.js';
 import { SimBridge } from './sim.js';
+import { initViews } from './views.js';
+import { initInstall } from './install.js';
 
 const $ = s => document.querySelector(s);
 const logEl = $('#log');
@@ -27,10 +29,20 @@ let lastValid = null;            // last good distance for the flatline hold
 // ---- line chart ----
 const chart = $('#chart'), cctx = chart.getContext('2d');
 const data = []; const MAXPTS = 260; // {mm|null}
+// Size the canvas bitmap to its on-screen size × devicePixelRatio so text and
+// lines stay crisp. CSS controls the layout size; this just follows it.
+function fitCanvas(c, ctx) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(c.clientWidth * dpr)), h = Math.max(1, Math.round(c.clientHeight * dpr));
+  if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { W: c.clientWidth, H: c.clientHeight };
+}
+new ResizeObserver(() => drawChart()).observe(chart);
 function drawChart() {
-  const W = chart.width, H = chart.height;
+  const { W, H } = fitCanvas(chart, cctx);
   cctx.clearRect(0, 0, W, H);
-  cctx.strokeStyle = cssVar('--grid'); cctx.fillStyle = cssVar('--muted'); cctx.font = '10px system-ui';
+  cctx.strokeStyle = cssVar('--grid'); cctx.fillStyle = cssVar('--muted'); cctx.font = '11px system-ui, sans-serif';
   for (let mm = 0; mm <= MAX_MM; mm += 100) {
     const y = H - mm / MAX_MM * H;
     cctx.globalAlpha = 0.5; cctx.beginPath(); cctx.moveTo(0, y); cctx.lineTo(W, y); cctx.stroke(); cctx.globalAlpha = 1;
@@ -47,7 +59,7 @@ function drawChart() {
   });
   if (pen) cctx.stroke();
   // mark dropouts with faint red ticks
-  cctx.fillStyle = '#b03a3a';
+  cctx.fillStyle = cssVar('--err');
   data.forEach((v, i) => { if (v == null) { const x = i / (MAXPTS - 1) * W; cctx.fillRect(x, 0, 1, H); } });
 }
 
@@ -56,7 +68,7 @@ const barEl = $('#distbar');
 function drawBar(mm, valid) {
   const pct = mm == null ? 0 : Math.min(100, mm / MAX_MM * 100);
   barEl.style.width = pct + '%';
-  barEl.style.background = valid ? cssVar('--accent') : '#b03a3a';
+  barEl.style.background = valid ? cssVar('--accent') : cssVar('--err');
 }
 
 // ---- bytes->number panel ----
@@ -123,6 +135,17 @@ $('#logsend').addEventListener('click', async () => {
   if (simulated || !bridge) { log('(no command sent)\n'); return; }
   try { await bridge.send(cmd); log('→ ' + cmd + '\n'); } catch (e) { log('[error] ' + e.message + '\n'); }
 });
+
+// ---- doc views + firmware install ----
+initViews(
+  $('#instrument'),
+  { hardware: $('#hardware'), firmware: $('#firmware'), about: $('#about') },
+  [...document.querySelectorAll('nav a[data-view]')],
+);
+initInstall({
+  installBridge: $('#fwInstallBridge'), installSensor: $('#fwInstallSensor'), status: $('#fwStatus'), bar: $('#fwBar'), log: $('#fwLog'), noRepl: $('#fwNoRepl'),
+  cpFile: $('#cpFile'), cpLoad: $('#cpLoad'), cpName: $('#cpName'), cpFlash: $('#cpFlash'),
+}, { releaseSerial: async () => { if (bridge && !simulated) await stop(); } });
 
 if (!navigator.serial) $('#nowebserial').hidden = false;
 setStatus('Not connected', false); setLink(false); drawChart();

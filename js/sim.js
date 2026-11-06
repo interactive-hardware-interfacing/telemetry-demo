@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * sim.js — fake sensor bridge for telemetry-demo. Emits the shared line-JSON
+ * sim.js — fake sensor bridge for telemetry-demo. Emits the bridge's line-JSON
  * with a 16-byte telemetry payload. The "distance" swings like a hand waving
  * in front of the sensor, and occasionally drops to no-echo so the dropout
  * flatline shows.
