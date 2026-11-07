@@ -59,6 +59,19 @@ pick it on the Firmware tab, click **Flash CircuitPython**. That path uses
 | `firmware/bridge/code.py`, `firmware/sensor/code.py` | One CircuitPython file per role. |
 | `PROTOCOL.md`, `wiring/` | The serial contract and the hookup. |
 
+## Logging data
+
+The **Data logging** panel records while connected (simulator included) and
+hands over one `.zip`: `samples.csv` (every packet: seq, distance in mm, raw
+echo µs, valid flag, RSSI, gap, payload hex) and `marks.csv` (labelled
+events from the **Mark** box — "hand at 20 cm", "sensor covered"). Marks
+also draw as ticks on the chart. Nothing touches disk until you click
+Download.
+
+**Presenter** (or press `P`) hides the log and settings and enlarges the
+chart and the number for a projector. `Esc` leaves it; the choice is
+remembered.
+
 ## Run locally
 
 ```

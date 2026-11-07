@@ -109,7 +109,7 @@ button.primary:hover:not(:disabled) { filter: brightness(1.12); border-color: va
 button.small { padding: 6px 12px; font-size: 14px; }
 input[type=range] { accent-color: var(--accent); }
 input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; }
-input[type=text], input:not([type]), select {
+input[type=text], input[type=number], input:not([type]), select {
   font: inherit; padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
   background: var(--bg-2); color: var(--text);
 }
@@ -176,6 +176,39 @@ footer a { color: var(--muted); } footer a:hover { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } html { scroll-behavior: auto; } }
 @media (max-width: 600px) { .wrap { padding: 0 16px 48px; } header h1 { font-size: 26px; } nav { gap: 2px 14px; } }
 
+/* presenter mode: body.presenter — big, quiet, for the projector.
+   Mark elements with data-presenter="hide" to drop them and data-presenter="hero"
+   to enlarge them. Everything keeps running; this is CSS only. */
+body.presenter { font-size: 19px; }
+body.presenter .wrap { max-width: none; padding: 0 32px 24px; }
+body.presenter [data-presenter="hide"], body.presenter header .tag, body.presenter header .eyebrow,
+body.presenter nav a:not([data-view=""]), body.presenter nav .navsep, body.presenter footer { display: none !important; }
+body.presenter header { padding-top: 14px; }
+body.presenter header::before { display: none; }
+body.presenter header h1 { font-size: 30px; margin-bottom: 4px; }
+body.presenter nav { margin-bottom: 12px; border-bottom: 0; }
+body.presenter nav a[data-view=""] { pointer-events: none; border-bottom-color: transparent; padding: 4px 0; }
+body.presenter .bar { margin-bottom: 10px; }
+body.presenter .stats .n { font-size: 56px; }
+body.presenter .stats .k { font-size: 14px; }
+body.presenter .panel h2 { font-size: 14px; }
+body.presenter [data-presenter="hero"] canvas { height: min(52vh, 560px) !important; }
+body.presenter button.small { font-size: 16px; }
+#presenter[aria-pressed="true"] { background: var(--yellow); border-color: var(--yellow); color: #1a1500; }
+
+/* data logging panel */
+.logpanel { margin-top: 16px; }
+.logrow { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.logrow .markgroup { display: inline-flex; gap: 6px; margin-left: auto; }
+.logrow .markgroup input { width: 180px; }
+.recstatus { color: var(--muted); font-family: var(--mono); font-size: 13px; flex: 1 1 200px; }
+.recstatus.on { color: var(--magenta); }
+.recstatus.on::before { content: "●"; margin-right: 6px; animation: blink 1s steps(2) infinite; }
+@keyframes blink { to { opacity: .25; } }
+.recstatus.full { color: var(--yellow); }
+#recStart.on { background: var(--magenta); border-color: var(--magenta); color: #1a0710; }
+.logfiles { color: var(--faint); font-size: 13px; margin: 8px 0 0; }
+
 /* ---- Part 2: telemetry-demo -------------------------------------------------- */
 
 #link { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .06em; padding: 4px 10px; border-radius: 999px; }
@@ -204,3 +237,6 @@ progress#fwBar { width: 100%; height: 6px; margin-top: 12px; accent-color: var(-
 .cpflash ol { padding-left: 20px; } .cpflash li { margin: 7px 0; }
 .fwlog { font-family: var(--mono); font-size: 12.5px; line-height: 1.6; background: #07090c; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 10px 12px; height: 170px; overflow: auto; white-space: pre-wrap; word-break: break-word; color: #cbd3de; }
 .fwlog .dim { color: var(--faint); } .fwlog .ok { color: var(--green); } .fwlog .warn { color: var(--yellow); } .fwlog .tx { color: var(--magenta); }
+
+body.presenter .bignum { font-size: 96px; }
+body.presenter #payhex { font-size: 20px; }

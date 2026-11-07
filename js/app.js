@@ -16,6 +16,8 @@ import { Bridge, FIELD_MAP } from './bridge.js';
 import { SimBridge } from './sim.js';
 import { initViews } from './views.js';
 import { initInstall } from './install.js';
+import { initPresenter } from './presenter.js';
+import { CaptureLogger, bindLogPanel } from './logger.js';
 
 const $ = s => document.querySelector(s);
 const logEl = $('#log');
@@ -28,7 +30,7 @@ let lastValid = null;            // last good distance for the flatline hold
 
 // ---- line chart ----
 const chart = $('#chart'), cctx = chart.getContext('2d');
-const data = []; const MAXPTS = 260; // {mm|null}
+const data = []; const MAXPTS = 260; let dataCount = 0; // {mm|null}
 // Size the canvas bitmap to its on-screen size × devicePixelRatio so text and
 // lines stay crisp. CSS controls the layout size; this just follows it.
 function fitCanvas(c, ctx) {
@@ -61,6 +63,10 @@ function drawChart() {
   // mark dropouts with faint red ticks
   cctx.fillStyle = cssVar('--err');
   data.forEach((v, i) => { if (v == null) { const x = i / (MAXPTS - 1) * W; cctx.fillRect(x, 0, 1, H); } });
+  // labelled marks from the logging panel
+  cctx.save(); cctx.strokeStyle = cssVar('--magenta'); cctx.fillStyle = cssVar('--magenta'); cctx.font = '10px system-ui, sans-serif';
+  for (const m of markTicks) { const idx = m.at - (dataCount - data.length); if (idx < 0 || idx > data.length) continue; const x = idx / (MAXPTS - 1) * W; cctx.beginPath(); cctx.moveTo(x, 0); cctx.lineTo(x, H); cctx.stroke(); cctx.fillText(m.label, x + 3, 10); }
+  cctx.restore();
 }
 
 // ---- moving bar ("hand") ----
@@ -96,7 +102,8 @@ function onLine(obj) {
   const valid = f.valid !== false && f.dist_mm != null;
   const mm = valid ? f.dist_mm : null;
 
-  data.push(mm); while (data.length > MAXPTS) data.shift();
+  data.push(mm); dataCount++; while (data.length > MAXPTS) data.shift();
+  logger.push('samples', [new Date().toISOString(), obj.seq, mm, f.echo_us, valid ? 1 : 0, obj.rssi, obj.gap || 0, obj.hex || '']);
   drawChart();
   drawBar(valid ? mm : (lastValid ?? 0), valid);
   if (valid) lastValid = mm;
@@ -111,7 +118,7 @@ function onLine(obj) {
 }
 
 // ---- controls ----
-function setStatus(t, c) { $('#status').textContent = t; $('#status').className = c ? 'ok' : ''; $('#connect').disabled = c; $('#sim').disabled = c; $('#disconnect').disabled = !c; }
+function setStatus(t, c) { if (!c && logger.recording) logger.stop(); paintLog(logger); $('#status').textContent = t; $('#status').className = c ? 'ok' : ''; $('#connect').disabled = c; $('#sim').disabled = c; $('#disconnect').disabled = !c; }
 
 async function start(useSim) {
   simulated = useSim;
@@ -148,5 +155,18 @@ initInstall({
 }, { releaseSerial: async () => { if (bridge && !simulated) await stop(); } });
 
 if (!navigator.serial) $('#nowebserial').hidden = false;
+// ---- presenter mode + data logging ----
+initPresenter($('#presenter'));
+const logger = new CaptureLogger({
+  samples: ['iso_time', 'seq', 'dist_mm', 'echo_us', 'valid', 'rssi_dbm', 'gap', 'hex'],
+}, 'telemetry-demo');
+const paintLog = bindLogPanel(logger, $, {
+  isConnected: () => !!bridge,
+  meta: () => ({ source: simulated ? 'simulator' : 'board', notes: 'samples.csv: one row per received packet. dist_mm is empty on a no-echo sample (valid = 0); hex is the raw 16-byte payload.' }),
+  log,
+});
+const markTicks = [];
+window.addEventListener('logmark', e => { markTicks.push({ at: dataCount, label: e.detail.label }); drawChart(); });
+
 setStatus('Not connected', false); setLink(false); drawChart();
 log('Ready. "Try without hardware" for the simulator, or "Connect bridge".\n');
